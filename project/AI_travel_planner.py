@@ -1,10 +1,12 @@
 
 
 import json
-import openai as Openai
+from openai import OpenAI
 from datetime import datetime
 
 # OOP Implementation of Travel Planner\
+
+# Fix validations
 
 class Destination:
     def __init__(self, city, country, start_date, end_date, budget, activities):
@@ -148,9 +150,9 @@ class ItineryManager:
         for destination in self.destinations:
             if destination.city == city:
                 return destination
-            if destination.city != city:
-                print(f"Destination {city} not found.")
-                break
+            
+            print(f"Destination {city} not found.")
+            break
     
     def view_all_destinations(self):
         for destination in self.destinations:
@@ -213,7 +215,10 @@ class ItineryManager:
                 country = input("Enter country: ")
                 start_date = input("Enter start date (YYYY-MM-DD): ")
                 end_date = input("Enter end date (YYYY-MM-DD): ")
-                budget = float(input("Enter budget: "))
+                try:
+                    budget = float(input("Enter budget: "))
+                except ValueError as e:
+                    print(f"Error: {e}")
                 activities = input("Enter activities (comma separated): ").split(",")
                 new_dest = Destination(city, country, start_date, end_date, budget, activities)
                 try:
@@ -245,8 +250,11 @@ class ItineryManager:
                 new_end_date = input("Enter new End Date: ")
                 self.update_destination(city, end_date=new_end_date)
             elif update_choice == "3":
-                new_bugdet = float(input("Enter new Bugdet: "))
-                self.update_destination(city, budget=new_bugdet)
+                try:
+                    new_bugdet = float(input("Enter new Bugdet: "))
+                    self.update_destination(city, budget=new_bugdet)
+                except ValueError as e:
+                    print(f"Error: {e}") 
             elif update_choice == "4":
                 new_activities = input("Enter new Activites: ").split(",")
                 self.update_destination(city, activities=new_activities)
@@ -254,6 +262,8 @@ class ItineryManager:
         elif choice == "4":
             search_city = input("Enter a City: ")
             self.search_destination()
+            if destination:
+                print(destination)
 
         elif choice == "5":
             self.view_all_destinations()
@@ -299,7 +309,7 @@ class ItineryManager:
         self.add_destination(dest1)
         self.add_destination(dest2)
 
-        ai_assistant = AITravelAssistant(api_key="YOUR_OPENAI_API_KEY")
+        ai_assistant = AITravelAssistant(api_key="OPENAI_API_KEY")
 
         while True:
             print("\n--- Welcome to the AI Travel Planner ---")
