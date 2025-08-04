@@ -1,7 +1,8 @@
 
 
 import json
-import openai 
+import openai as Openai
+from datetime import datetime
 
 # OOP Implementation of Travel Planner\
 
@@ -45,6 +46,20 @@ class Destination:
             "budget": self.budget,
             "activities": self.activities
         }
+    
+    def validate(self):
+        if not self.city or not self.country:
+            raise ValueError("City and country must be specified.")
+        if not self.start_date or not self.end_date:
+            raise ValueError("Start and end dates must be specified.")
+        start = datetime.strptime(self.start_date, "%Y-%m-%d")
+        end = datetime.strptime(self.end_date, "%Y-%m-%d")
+        if start >= end:
+            raise ValueError("Start date must be before end date.")
+        if self.budget <= 0:
+            raise ValueError("Budget must be a positive number.")
+        if not self.activities:
+            raise ValueError("At least one activity must be specified.")
 
     @classmethod
     def from_dict(cls, data):
@@ -59,8 +74,8 @@ class Destination:
     
 class AITravelAssistant:
     def __init__(self, api_key):
-        self.api_key = api_key
-    
+        self.client = OpenAI(api_key=api_key)  
+
     def generate_itinerary(self, destination):
         prompt = f"""
         Create a day-by-day travel itinerary for a trip to {destination.city}, {destination.country}
@@ -70,8 +85,8 @@ class AITravelAssistant:
         The plan should be practical and exciting.
         """
 
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",  
+        response = self.client.chat.completions.create(
+            model="gpt-3.5-turbo",
             messages=[
                 {"role": "system", "content": "You are a helpful travel planner."},
                 {"role": "user", "content": prompt}
@@ -79,9 +94,8 @@ class AITravelAssistant:
             temperature=0.7
         )
 
-        itinerary = response["choices"][0]["message"]["content"]
-        return itinerary
-    
+        return response.choices[0].message.content
+
     def generate_budget_tips(self, destination):
         prompt = f"""
         Provide budget-saving travel tips for a trip to {destination.city}, {destination.country}
@@ -90,18 +104,18 @@ class AITravelAssistant:
         Activities: {', '.join(destination.activities)}.
         """
 
-        response = openai.ChatCompletion.create(
+        response = self.client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
-                {"role": "system", "content": "You are a smart budget travel assistant."},
+                {"role": "system", "content": "You are a helpful travel planner."},
                 {"role": "user", "content": prompt}
             ],
             temperature=0.7
         )
 
-        tips = response["choices"][0]["message"]["content"]
-        return tips
-        
+        return response.choices[0].message.content
+
+
 
     
     
@@ -117,6 +131,9 @@ class ItineryManager:
             if destination.city == city:
                 self.destinations.remove(destination)
                 break
+            if destination.city != city:
+                print(f"Destination {city} not found.")
+                break
 
     def update_destination(self, city, **kwargs):
         for destination in self.destinations:
@@ -131,9 +148,9 @@ class ItineryManager:
         for destination in self.destinations:
             if destination.city == city:
                 return destination
-            
-            else:
-                return None
+            if destination.city != city:
+                print(f"Destination {city} not found.")
+                break
     
     def view_all_destinations(self):
         for destination in self.destinations:
@@ -199,9 +216,13 @@ class ItineryManager:
                 budget = float(input("Enter budget: "))
                 activities = input("Enter activities (comma separated): ").split(",")
                 new_dest = Destination(city, country, start_date, end_date, budget, activities)
-                self.add_destination(new_dest)
-                print(f"Added destination: {new_dest}")
-
+                try:
+                    new_dest.validate()
+                    self.add_destination(new_dest)
+                    print(f"Added destination: {new_dest}")
+                except ValueError as e:
+                    print(f"Error: {e}")
+                
         elif choice == "2":
                 city = input("Enter city to remove: ")
                 self.remove_destination(city)
