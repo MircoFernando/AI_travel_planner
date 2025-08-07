@@ -6,7 +6,6 @@ from datetime import datetime
 
 # OOP Implementation of Travel Planner\
 
-# Fix validations
 
 class Destination:
     def __init__(self, city, country, start_date, end_date, budget, activities):
@@ -54,13 +53,16 @@ class Destination:
             raise ValueError("City and country must be specified.")
         if not self.start_date or not self.end_date:
             raise ValueError("Start and end dates must be specified.")
-        start = datetime.strptime(self.start_date, "%Y-%m-%d")
-        end = datetime.strptime(self.end_date, "%Y-%m-%d")
+        try:
+            start = datetime.strptime(self.start_date, "%Y-%m-%d")
+            end = datetime.strptime(self.end_date, "%Y-%m-%d")
+        except ValueError:
+            raise ValueError("Dates must be in the format YYYY-MM-DD.")
         if start >= end:
             raise ValueError("Start date must be before end date.")
         if self.budget <= 0:
             raise ValueError("Budget must be a positive number.")
-        if not self.activities:
+        if not self.activities or not any(a.strip() for a in self.activities):
             raise ValueError("At least one activity must be specified.")
 
     @classmethod
@@ -132,10 +134,11 @@ class ItineryManager:
         for destination in self.destinations:
             if destination.city == city:
                 self.destinations.remove(destination)
-                break
-            if destination.city != city:
-                print(f"Destination {city} not found.")
-                break
+                print(f"Removed destination: {city}")
+                return
+            
+        print(f"Destination {city} not found.")
+                
 
     def update_destination(self, city, **kwargs):
         for destination in self.destinations:
@@ -151,8 +154,8 @@ class ItineryManager:
             if destination.city == city:
                 return destination
             
-            print(f"Destination {city} not found.")
-            break
+        print(f"Destination {city} not found.")
+        return None
     
     def view_all_destinations(self):
         for destination in self.destinations:
@@ -231,37 +234,50 @@ class ItineryManager:
         elif choice == "2":
                 city = input("Enter city to remove: ")
                 self.remove_destination(city)
-                print(f"Removed destination: {city}")
+                
 
         elif choice == "3":
             city = input("Enter city to update: ")
             print("What do you want to update?")
-            update_choice = input(
-                "1. Start Date\n"
-                "2. End Date\n"
-                "3. Budget\n"
-                "4. Activities\n"
-                "Enter your choice: "
-            )
-            if update_choice == "1":
-                new_start_date = input("Enter new Start Date: ")
-                self.update_destination(city, start_date=new_start_date)
-            elif update_choice == "2":
-                new_end_date = input("Enter new End Date: ")
-                self.update_destination(city, end_date=new_end_date)
-            elif update_choice == "3":
+            while True:
+                update_choice = input(
+                    "1. Start Date\n"
+                    "2. End Date\n"
+                    "3. Budget\n"
+                    "4. Activities\n"
+                    "Enter your choice: "
+                )
+                if update_choice == "1":
+                    new_start_date = input("Enter new Start Date: ")
+                    self.update_destination(city, start_date=new_start_date)
+                elif update_choice == "2":
+                    new_end_date = input("Enter new End Date: ")
+                    self.update_destination(city, end_date=new_end_date)
+                elif update_choice == "3":
+                    try:
+                        new_bugdet = float(input("Enter new Bugdet: "))
+                        self.update_destination(city, budget=new_bugdet)
+                    except ValueError as e:
+                        print(f"Error: {e}") 
+                        continue
+                elif update_choice == "4":
+                    new_activities = input("Enter new Activites: ").split(",")
+                    self.update_destination(city, activities=new_activities)
+
+                elif update_choice not in ["1", "2", "3", "4"]:
+                    print("Invalid choice. Please try again.")
+                    continue
+                
                 try:
-                    new_bugdet = float(input("Enter new Bugdet: "))
-                    self.update_destination(city, budget=new_bugdet)
+                        self.validate()
+                        print(f"You have successfully updated your Destination: {city}")
+                        break
                 except ValueError as e:
-                    print(f"Error: {e}") 
-            elif update_choice == "4":
-                new_activities = input("Enter new Activites: ").split(",")
-                self.update_destination(city, activities=new_activities)
+                        print(f"Error: {e}")
 
         elif choice == "4":
             search_city = input("Enter a City: ")
-            self.search_destination()
+            destination = self.search_destination(search_city)
             if destination:
                 print(destination)
 
